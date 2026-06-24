@@ -1,85 +1,147 @@
-import { useState } from 'react';
-import { Activity, ShieldCheck, Sparkles } from 'lucide-react';
-import WalletConnect from './components/WalletConnect';
-import CreateFeedback from './components/CreateFeedback';
-import GetFeedback from './components/GetFeedback';
+import { useMemo, useState } from 'react';
+import { Activity, LayoutDashboard, ShieldCheck, UserPlus, Wallet } from 'lucide-react';
+import AdminPage from './pages/AdminPage';
+import DashboardPage from './pages/DashboardPage';
+import RegisterPage from './pages/RegisterPage';
+import ErrorAlert from './components/ErrorAlert';
+import LoadingSpinner from './components/LoadingSpinner';
+import { NETWORK_CONFIG } from './config/network';
+import { CONTRACTS } from './config/contracts';
+import { useWallet } from './hooks/useWallet';
+import { shortenAddress } from './services/stellarClient';
+
+const tabs = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'register', label: 'Register', icon: UserPlus },
+  { id: 'admin', label: 'Admin', icon: ShieldCheck },
+];
 
 function App() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState('');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [refreshToken, setRefreshToken] = useState(0);
+  const wallet = useWallet();
 
-  const handleConnect = (pubKey) => {
-    if (pubKey) {
-      setIsConnected(true);
-      setWalletAddress(pubKey);
+  const isAdmin = useMemo(
+    () =>
+      Boolean(
+        wallet.address &&
+          CONTRACTS.adminPublicKey &&
+          wallet.address === CONTRACTS.adminPublicKey,
+      ),
+    [wallet.address],
+  );
+
+  const requestRefresh = () => setRefreshToken((value) => value + 1);
+
+  const renderPage = () => {
+    if (activeTab === 'register') {
+      return (
+        <RegisterPage
+          wallet={wallet}
+          isAdmin={isAdmin}
+          onRegistered={requestRefresh}
+        />
+      );
     }
+
+    if (activeTab === 'admin') {
+      return (
+        <AdminPage
+          wallet={wallet}
+          isAdmin={isAdmin}
+          refreshToken={refreshToken}
+          onMutation={requestRefresh}
+        />
+      );
+    }
+
+    return (
+      <DashboardPage
+        wallet={wallet}
+        isAdmin={isAdmin}
+        refreshToken={refreshToken}
+        onMutation={requestRefresh}
+      />
+    );
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#04050d] text-slate-100">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(168,85,247,0.18),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.12),_transparent_24%)]" />
-        <div className="absolute -left-16 top-12 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl animate-float-slow" />
-        <div className="absolute right-0 top-24 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl animate-float-medium" />
-        <div className="absolute bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-blue-500/15 blur-3xl animate-float-slow [animation-delay:-5s]" />
-        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] [background-size:80px_80px] [mask-image:radial-gradient(circle_at_center,black,transparent_85%)]" />
-      </div>
-
-      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-8 sm:px-6 lg:px-8">
-        <header className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-300 backdrop-blur-xl">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
-              Stellar Soroban dApp
-            </div>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              Decentralized Feedback System
-            </h1>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
-              Submit and fetch anonymous feedback through a polished wallet-first interface designed for calm, high-clarity Web3 flows.
-            </p>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 shadow-[0_20px_60px_rgba(2,6,23,0.35)] backdrop-blur-2xl">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <header className="border-b border-slate-800 bg-slate-950/95">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-cyan-400/12 p-2 text-cyan-300">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Wallet</p>
-                  <p className="mt-1 text-sm font-medium text-white">
-                    {isConnected ? 'Connected' : 'Awaiting connection'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/5 px-5 py-4 shadow-[0_20px_60px_rgba(2,6,23,0.35)] backdrop-blur-2xl">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-violet-400/12 p-2 text-violet-300">
+                <div className="grid h-10 w-10 place-items-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-cyan-200">
                   <Activity className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Network</p>
-                  <p className="mt-1 text-sm font-medium text-white">Stellar Testnet</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+                    Stellar Operations
+                  </p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-white">
+                    Feedback Dashboard
+                  </h1>
                 </div>
+              </div>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+                Monitor registered users, submit feedback, and manage the review lifecycle on Soroban testnet.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[420px]">
+              <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Network</p>
+                <p className="mt-1 text-sm font-medium text-white">{NETWORK_CONFIG.name}</p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Wallet</p>
+                <p className="mt-1 truncate text-sm font-medium text-white">
+                  {wallet.address ? shortenAddress(wallet.address) : 'Not connected'}
+                </p>
               </div>
             </div>
           </div>
-        </header>
 
-        <main className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-          <div className="space-y-6">
-            <WalletConnect onConnect={handleConnect} />
-            <CreateFeedback isConnected={isConnected} walletAddress={walletAddress} />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <nav className="flex overflow-x-auto rounded-lg border border-slate-800 bg-slate-900 p-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex min-w-fit items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition ${
+                      isActive
+                        ? 'bg-cyan-400 text-slate-950'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+
+            <button
+              type="button"
+              onClick={wallet.connect}
+              disabled={wallet.loading}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+            >
+              {wallet.loading ? <LoadingSpinner size="sm" /> : <Wallet className="h-4 w-4" />}
+              {wallet.address ? 'Reconnect wallet' : 'Connect Freighter'}
+            </button>
           </div>
 
-          <div>
-            <GetFeedback />
-          </div>
-        </main>
-      </div>
+          {wallet.error && <ErrorAlert title="Wallet error" message={wallet.error} />}
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{renderPage()}</main>
     </div>
   );
 }

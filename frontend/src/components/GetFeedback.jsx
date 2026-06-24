@@ -17,7 +17,7 @@ const GetFeedback = () => {
     setFeedbackData(null);
 
     const id = parseInt(feedbackId, 10);
-    if (isNaN(id) || id <= 0) {
+    if (Number.isNaN(id) || id <= 0) {
       setError('Please enter a valid Feedback ID.');
       return;
     }
@@ -49,7 +49,7 @@ const GetFeedback = () => {
 
   return (
     <section className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:bg-white/[0.07]">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-cyan-400/60 to-transparent" />
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/15 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
@@ -79,7 +79,7 @@ const GetFeedback = () => {
         <button
           type="submit"
           disabled={loading || !feedbackId}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 px-5 py-3 font-semibold text-white shadow-[0_18px_38px_rgba(79,70,229,0.35)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(45,212,191,0.28)] active:scale-[0.99] disabled:cursor-not-allowed disabled:from-slate-700 disabled:via-slate-700 disabled:to-slate-600 disabled:text-slate-400 disabled:shadow-none sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-fuchsia-500 via-violet-500 to-cyan-500 px-5 py-3 font-semibold text-white shadow-[0_18px_38px_rgba(79,70,229,0.35)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_42px_rgba(45,212,191,0.28)] active:scale-[0.99] disabled:cursor-not-allowed disabled:from-slate-700 disabled:via-slate-700 disabled:to-slate-600 disabled:text-slate-400 disabled:shadow-none sm:w-auto"
         >
           {loading ? (
             <>
