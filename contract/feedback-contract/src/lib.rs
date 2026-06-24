@@ -49,18 +49,30 @@ pub struct FeedbackCreated {
     pub id: u32,
     #[topic]
     pub author: Address,
+    pub status: Status,
+    pub timestamp: u64,
 }
 
 #[contractevent(topics = ["FeedbackReviewed"])]
 pub struct FeedbackReviewed {
     #[topic]
     pub id: u32,
+    #[topic]
+    pub author: Address,
+    pub admin: Address,
+    pub status: Status,
+    pub timestamp: u64,
 }
 
 #[contractevent(topics = ["FeedbackResolved"])]
 pub struct FeedbackResolved {
     #[topic]
     pub id: u32,
+    #[topic]
+    pub author: Address,
+    pub admin: Address,
+    pub status: Status,
+    pub timestamp: u64,
 }
 
 #[contract]
@@ -112,7 +124,13 @@ impl FeedbackContract {
             .instance()
             .set(&DataKey::Feedback(count), &feedback);
         env.storage().instance().set(&count_key, &count);
-        FeedbackCreated { id: count, author }.publish(&env);
+        FeedbackCreated {
+            id: count,
+            author,
+            status: Status::Pending,
+            timestamp: feedback.created_at,
+        }
+        .publish(&env);
 
         Ok(count)
     }
@@ -125,39 +143,55 @@ impl FeedbackContract {
     }
 
     pub fn review_feedback(env: Env, id: u32) -> Result<(), FeedbackError> {
-        require_admin(&env)?;
+        let admin = require_admin(&env)?;
 
         let mut feedback = get_existing_feedback(&env, id)?;
         if feedback.status != Status::Pending {
             return Err(FeedbackError::InvalidStatusTransition);
         }
 
+        let timestamp = env.ledger().timestamp();
         feedback.status = Status::Reviewed;
-        feedback.reviewed_at = Some(env.ledger().timestamp());
+        feedback.reviewed_at = Some(timestamp);
 
         env.storage()
             .instance()
             .set(&DataKey::Feedback(id), &feedback);
-        FeedbackReviewed { id }.publish(&env);
+        FeedbackReviewed {
+            id,
+            author: feedback.author,
+            admin,
+            status: Status::Reviewed,
+            timestamp,
+        }
+        .publish(&env);
 
         Ok(())
     }
 
     pub fn resolve_feedback(env: Env, id: u32) -> Result<(), FeedbackError> {
-        require_admin(&env)?;
+        let admin = require_admin(&env)?;
 
         let mut feedback = get_existing_feedback(&env, id)?;
         if feedback.status != Status::Reviewed {
             return Err(FeedbackError::InvalidStatusTransition);
         }
 
+        let timestamp = env.ledger().timestamp();
         feedback.status = Status::Resolved;
-        feedback.resolved_at = Some(env.ledger().timestamp());
+        feedback.resolved_at = Some(timestamp);
 
         env.storage()
             .instance()
             .set(&DataKey::Feedback(id), &feedback);
-        FeedbackResolved { id }.publish(&env);
+        FeedbackResolved {
+            id,
+            author: feedback.author,
+            admin,
+            status: Status::Resolved,
+            timestamp,
+        }
+        .publish(&env);
 
         Ok(())
     }

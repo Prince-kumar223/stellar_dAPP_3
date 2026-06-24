@@ -1,9 +1,11 @@
 #![cfg(test)]
 
+extern crate std;
+
 use super::*;
 use soroban_sdk::{
-    testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke},
-    Env, IntoVal, String,
+    testutils::{Address as _, Events, Ledger, MockAuth, MockAuthInvoke},
+    Env, Event, IntoVal, String,
 };
 use user_registry_contract::{UserRegistryContract, UserRegistryContractClient};
 
@@ -215,4 +217,67 @@ fn test_empty_message_rejection() {
     let result = feedback_client.try_create_feedback(&registered_user, &empty, &registry_id);
 
     assert_eq!(result, Err(Ok(FeedbackError::EmptyMessage)));
+}
+
+#[test]
+fn test_feedback_events_include_lifecycle_payloads() {
+    let env = Env::default();
+    env.ledger()
+        .with_mut(|ledger| ledger.timestamp = 1_700_000_001);
+    env.mock_all_auths();
+
+    let feedback_contract_id = env.register(FeedbackContract, ());
+    let feedback_client = FeedbackContractClient::new(&env, &feedback_contract_id);
+    let registry_contract_id = env.register(UserRegistryContract, ());
+    let registry_client = UserRegistryContractClient::new(&env, &registry_contract_id);
+    let admin = Address::generate(&env);
+    let author = Address::generate(&env);
+    let message = String::from_str(&env, "Events should be useful.");
+
+    registry_client.initialize(&admin);
+    registry_client.register_user(&author);
+    feedback_client.initialize(&admin);
+
+    let id = feedback_client.create_feedback(&author, &message, &registry_contract_id);
+    let created = FeedbackCreated {
+        id,
+        author: author.clone(),
+        status: Status::Pending,
+        timestamp: 1_700_000_001,
+    };
+    assert_eq!(
+        env.events().all().filter_by_contract(&feedback_contract_id),
+        std::vec![created.to_xdr(&env, &feedback_contract_id)]
+    );
+
+    env.ledger()
+        .with_mut(|ledger| ledger.timestamp = 1_700_000_002);
+    feedback_client.review_feedback(&id);
+    let reviewed = FeedbackReviewed {
+        id,
+        author: author.clone(),
+        admin: admin.clone(),
+        status: Status::Reviewed,
+        timestamp: 1_700_000_002,
+    };
+    assert_eq!(
+        env.events().all().filter_by_contract(&feedback_contract_id),
+        std::vec![reviewed.to_xdr(&env, &feedback_contract_id)]
+    );
+
+    env.ledger()
+        .with_mut(|ledger| ledger.timestamp = 1_700_000_003);
+    feedback_client.resolve_feedback(&id);
+    let resolved = FeedbackResolved {
+        id,
+        author,
+        admin,
+        status: Status::Resolved,
+        timestamp: 1_700_000_003,
+    };
+
+    assert_eq!(
+        env.events().all().filter_by_contract(&feedback_contract_id),
+        std::vec![resolved.to_xdr(&env, &feedback_contract_id)]
+    );
 }

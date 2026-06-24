@@ -24,12 +24,16 @@ pub enum RegistryError {
 pub struct UserRegistered {
     #[topic]
     pub user: Address,
+    pub admin: Address,
+    pub timestamp: u64,
 }
 
 #[contractevent(topics = ["UserUnregistered"])]
 pub struct UserUnregistered {
     #[topic]
     pub user: Address,
+    pub admin: Address,
+    pub timestamp: u64,
 }
 
 #[contract]
@@ -47,7 +51,7 @@ impl UserRegistryContract {
     }
 
     pub fn register_user(env: Env, user: Address) -> Result<(), RegistryError> {
-        require_admin(&env)?;
+        let admin = require_admin(&env)?;
 
         let user_key = DataKey::RegisteredUser(user.clone());
         if env.storage().instance().has(&user_key) {
@@ -55,13 +59,18 @@ impl UserRegistryContract {
         }
 
         env.storage().instance().set(&user_key, &true);
-        UserRegistered { user }.publish(&env);
+        UserRegistered {
+            user,
+            admin,
+            timestamp: env.ledger().timestamp(),
+        }
+        .publish(&env);
 
         Ok(())
     }
 
     pub fn unregister_user(env: Env, user: Address) -> Result<(), RegistryError> {
-        require_admin(&env)?;
+        let admin = require_admin(&env)?;
 
         let user_key = DataKey::RegisteredUser(user.clone());
         if !env.storage().instance().has(&user_key) {
@@ -69,7 +78,12 @@ impl UserRegistryContract {
         }
 
         env.storage().instance().remove(&user_key);
-        UserUnregistered { user }.publish(&env);
+        UserUnregistered {
+            user,
+            admin,
+            timestamp: env.ledger().timestamp(),
+        }
+        .publish(&env);
 
         Ok(())
     }

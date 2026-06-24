@@ -1,7 +1,12 @@
 #![cfg(test)]
 
+extern crate std;
+
 use super::*;
-use soroban_sdk::{testutils::Address as _, Env};
+use soroban_sdk::{
+    testutils::{Address as _, Events, Ledger},
+    Env, Event,
+};
 
 fn setup() -> (Env, UserRegistryContractClient<'static>, Address, Address) {
     let env = Env::default();
@@ -120,4 +125,39 @@ fn test_duplicate_register_and_missing_unregister_errors() {
 
     let missing = client.try_unregister_user(&user);
     assert_eq!(missing, Err(Ok(RegistryError::UserNotRegistered)));
+}
+
+#[test]
+fn test_registry_events_include_admin_and_timestamp() {
+    let env = Env::default();
+    env.ledger().with_mut(|ledger| ledger.timestamp = 42);
+    env.mock_all_auths();
+
+    let contract_id = env.register(UserRegistryContract, ());
+    let client = UserRegistryContractClient::new(&env, &contract_id);
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+
+    client.initialize(&admin);
+    client.register_user(&user);
+    let registered = UserRegistered {
+        user: user.clone(),
+        admin: admin.clone(),
+        timestamp: 42,
+    };
+    assert_eq!(
+        env.events().all().filter_by_contract(&contract_id),
+        std::vec![registered.to_xdr(&env, &contract_id)]
+    );
+
+    client.unregister_user(&user);
+    let unregistered = UserUnregistered {
+        user,
+        admin,
+        timestamp: 42,
+    };
+    assert_eq!(
+        env.events().all().filter_by_contract(&contract_id),
+        std::vec![unregistered.to_xdr(&env, &contract_id)]
+    );
 }
