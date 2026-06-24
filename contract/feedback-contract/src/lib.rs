@@ -1,10 +1,66 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Env, String};
+use soroban_sdk::{
+    contract, contracterror, contractevent, contractimpl, contracttype, Address, Env, String,
+};
+use user_registry_contract::UserRegistryContractClient;
 
 #[contracttype]
 pub enum DataKey {
+    Admin,
     FeedbackCount,
     Feedback(u32),
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Status {
+    Pending,
+    Reviewed,
+    Resolved,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Feedback {
+    pub id: u32,
+    pub author: Address,
+    pub message: String,
+    pub status: Status,
+    pub created_at: u64,
+    pub reviewed_at: Option<u64>,
+    pub resolved_at: Option<u64>,
+}
+
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
+pub enum FeedbackError {
+    NotAdmin = 1,
+    NotRegistered = 2,
+    FeedbackNotFound = 3,
+    InvalidStatusTransition = 4,
+    EmptyMessage = 5,
+    AlreadyInitialized = 6,
+}
+
+#[contractevent(topics = ["FeedbackCreated"])]
+pub struct FeedbackCreated {
+    #[topic]
+    pub id: u32,
+    #[topic]
+    pub author: Address,
+}
+
+#[contractevent(topics = ["FeedbackReviewed"])]
+pub struct FeedbackReviewed {
+    #[topic]
+    pub id: u32,
+}
+
+#[contractevent(topics = ["FeedbackResolved"])]
+pub struct FeedbackResolved {
+    #[topic]
+    pub id: u32,
 }
 
 #[contract]
@@ -12,37 +68,117 @@ pub struct FeedbackContract;
 
 #[contractimpl]
 impl FeedbackContract {
-    /// Creates a new feedback entry and returns its unique ID.
-    pub fn create_feedback(env: Env, text: String) -> u32 {
-        let count_key = DataKey::FeedbackCount;
-        
-        // Get current count, default to 0
-        let mut count: u32 = env.storage().instance().get(&count_key).unwrap_or(0);
-        
-        // Increment count for the new ID
-        count += 1;
-        
-        // Save the feedback text with the new ID
-        let feedback_key = DataKey::Feedback(count);
-        env.storage().instance().set(&feedback_key, &text);
-        
-        // Update the global count
-        env.storage().instance().set(&count_key, &count);
-        
-        // Return the new ID
-        count
+    pub fn initialize(env: Env, admin: Address) -> Result<(), FeedbackError> {
+        if env.storage().instance().has(&DataKey::Admin) {
+            return Err(FeedbackError::AlreadyInitialized);
+        }
+
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        Ok(())
     }
 
-    /// Fetches a feedback text by its ID.
-    pub fn get_feedback(env: Env, id: u32) -> String {
-        let feedback_key = DataKey::Feedback(id);
-        
-        // Return the feedback if it exists, otherwise return a default "Not found" string
+    pub fn create_feedback(
+        env: Env,
+        author: Address,
+        message: String,
+        user_registry_contract: Address,
+    ) -> Result<u32, FeedbackError> {
+        if message.is_empty() {
+            return Err(FeedbackError::EmptyMessage);
+        }
+
+        author.require_auth();
+
+        let registry_client = UserRegistryContractClient::new(&env, &user_registry_contract);
+        if !registry_client.is_registered(&author) {
+            return Err(FeedbackError::NotRegistered);
+        }
+
+        let count_key = DataKey::FeedbackCount;
+        let mut count: u32 = env.storage().instance().get(&count_key).unwrap_or(0);
+        count += 1;
+
+        let feedback = Feedback {
+            id: count,
+            author: author.clone(),
+            message,
+            status: Status::Pending,
+            created_at: env.ledger().timestamp(),
+            reviewed_at: None,
+            resolved_at: None,
+        };
+
         env.storage()
             .instance()
-            .get(&feedback_key)
-            .unwrap_or(String::from_str(&env, "Feedback not found"))
+            .set(&DataKey::Feedback(count), &feedback);
+        env.storage().instance().set(&count_key, &count);
+        FeedbackCreated { id: count, author }.publish(&env);
+
+        Ok(count)
     }
+
+    pub fn get_feedback(env: Env, id: u32) -> Result<Feedback, FeedbackError> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Feedback(id))
+            .ok_or(FeedbackError::FeedbackNotFound)
+    }
+
+    pub fn review_feedback(env: Env, id: u32) -> Result<(), FeedbackError> {
+        require_admin(&env)?;
+
+        let mut feedback = get_existing_feedback(&env, id)?;
+        if feedback.status != Status::Pending {
+            return Err(FeedbackError::InvalidStatusTransition);
+        }
+
+        feedback.status = Status::Reviewed;
+        feedback.reviewed_at = Some(env.ledger().timestamp());
+
+        env.storage()
+            .instance()
+            .set(&DataKey::Feedback(id), &feedback);
+        FeedbackReviewed { id }.publish(&env);
+
+        Ok(())
+    }
+
+    pub fn resolve_feedback(env: Env, id: u32) -> Result<(), FeedbackError> {
+        require_admin(&env)?;
+
+        let mut feedback = get_existing_feedback(&env, id)?;
+        if feedback.status != Status::Reviewed {
+            return Err(FeedbackError::InvalidStatusTransition);
+        }
+
+        feedback.status = Status::Resolved;
+        feedback.resolved_at = Some(env.ledger().timestamp());
+
+        env.storage()
+            .instance()
+            .set(&DataKey::Feedback(id), &feedback);
+        FeedbackResolved { id }.publish(&env);
+
+        Ok(())
+    }
+}
+
+fn require_admin(env: &Env) -> Result<Address, FeedbackError> {
+    let admin: Address = env
+        .storage()
+        .instance()
+        .get(&DataKey::Admin)
+        .ok_or(FeedbackError::NotAdmin)?;
+
+    admin.require_auth();
+    Ok(admin)
+}
+
+fn get_existing_feedback(env: &Env, id: u32) -> Result<Feedback, FeedbackError> {
+    env.storage()
+        .instance()
+        .get(&DataKey::Feedback(id))
+        .ok_or(FeedbackError::FeedbackNotFound)
 }
 
 mod test;

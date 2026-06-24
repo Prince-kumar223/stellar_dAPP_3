@@ -595,6 +595,7 @@ name = "feedback-contract"
 version = "0.1.0"
 dependencies = [
  "soroban-sdk",
+ "user-registry-contract",
 ]
 
 [[package]]
