@@ -11,14 +11,14 @@ Deploy the registry first, then the feedback contract.
 
 Install:
 
-- Rust with the `wasm32-unknown-unknown` target.
+- Rust with the `wasm32v1-none` target.
 - Stellar CLI.
 - A funded Stellar testnet account for deployment.
 
 Rust target:
 
 ```sh
-rustup target add wasm32-unknown-unknown
+rustup target add wasm32v1-none
 ```
 
 Check Stellar CLI:
@@ -96,14 +96,14 @@ stellar contract build --manifest-path contract/Cargo.toml --package feedback-co
 
 ```sh
 stellar contract deploy \
-  --wasm contract/target/wasm32-unknown-unknown/release/user_registry_contract.wasm \
+  --wasm contract/target/wasm32v1-none/release/user_registry_contract.wasm \
   --source "$SOURCE_ACCOUNT" \
   --network testnet
 ```
 
 ```sh
 stellar contract deploy \
-  --wasm contract/target/wasm32-unknown-unknown/release/feedback_contract.wasm \
+  --wasm contract/target/wasm32v1-none/release/feedback_contract.wasm \
   --source "$SOURCE_ACCOUNT" \
   --network testnet
 ```

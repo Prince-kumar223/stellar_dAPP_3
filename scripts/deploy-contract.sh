@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONTRACT_DIR="$ROOT_DIR/contract"
-TARGET_DIR="$CONTRACT_DIR/target/wasm32-unknown-unknown/release"
+TARGET_DIR="$CONTRACT_DIR/target/wasm32v1-none/release"
 
 SOURCE_ACCOUNT="${SOURCE_ACCOUNT:-}"
 ADMIN_PUBLIC_KEY="${ADMIN_PUBLIC_KEY:-}"

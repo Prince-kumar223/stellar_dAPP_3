@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 
 $RootDir = Resolve-Path (Join-Path $PSScriptRoot "..")
 $ContractDir = Join-Path $RootDir "contract"
-$TargetDir = Join-Path $ContractDir "target\wasm32-unknown-unknown\release"
+$TargetDir = Join-Path $ContractDir "target\wasm32v1-none\release"
 
 $RegistryPackage = "user-registry-contract"
 $FeedbackPackage = "feedback-contract"
