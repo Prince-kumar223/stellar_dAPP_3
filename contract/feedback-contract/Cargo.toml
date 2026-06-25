@@ -11,7 +11,7 @@ testutils = ["soroban-sdk/testutils"]
 
 [dependencies]
 soroban-sdk = { workspace = true }
-user-registry-contract = { path = "../user-registry-contract" }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
+user-registry-contract = { path = "../user-registry-contract" }

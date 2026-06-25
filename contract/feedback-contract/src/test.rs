@@ -7,12 +7,12 @@ use soroban_sdk::{
     testutils::{Address as _, Events, Ledger, MockAuth, MockAuthInvoke},
     Env, Event, IntoVal, String,
 };
-use user_registry_contract::{UserRegistryContract, UserRegistryContractClient};
+use user_registry_contract::UserRegistryContract;
 
 fn setup() -> (
     Env,
     FeedbackContractClient<'static>,
-    UserRegistryContractClient<'static>,
+    user_registry_contract::UserRegistryContractClient<'static>,
     Address,
     Address,
     Address,
@@ -26,7 +26,8 @@ fn setup() -> (
     let feedback_client = FeedbackContractClient::new(&env, &feedback_contract_id);
 
     let registry_contract_id = env.register(UserRegistryContract, ());
-    let registry_client = UserRegistryContractClient::new(&env, &registry_contract_id);
+    let registry_client =
+        user_registry_contract::UserRegistryContractClient::new(&env, &registry_contract_id);
 
     let admin = Address::generate(&env);
     let registered_user = Address::generate(&env);
@@ -162,7 +163,8 @@ fn test_authorization_checks() {
     let feedback_contract_id = env.register(FeedbackContract, ());
     let feedback_client = FeedbackContractClient::new(&env, &feedback_contract_id);
     let registry_contract_id = env.register(UserRegistryContract, ());
-    let registry_client = UserRegistryContractClient::new(&env, &registry_contract_id);
+    let registry_client =
+        user_registry_contract::UserRegistryContractClient::new(&env, &registry_contract_id);
     let admin = Address::generate(&env);
     let user = Address::generate(&env);
     let message = String::from_str(&env, "Auth is required.");
@@ -229,7 +231,8 @@ fn test_feedback_events_include_lifecycle_payloads() {
     let feedback_contract_id = env.register(FeedbackContract, ());
     let feedback_client = FeedbackContractClient::new(&env, &feedback_contract_id);
     let registry_contract_id = env.register(UserRegistryContract, ());
-    let registry_client = UserRegistryContractClient::new(&env, &registry_contract_id);
+    let registry_client =
+        user_registry_contract::UserRegistryContractClient::new(&env, &registry_contract_id);
     let admin = Address::generate(&env);
     let author = Address::generate(&env);
     let message = String::from_str(&env, "Events should be useful.");

@@ -1,8 +1,13 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contracterror, contractevent, contractimpl, contracttype, Address, Env, String,
+    contract, contractclient, contracterror, contractevent, contractimpl, contracttype, Address,
+    Env, String,
 };
-use user_registry_contract::UserRegistryContractClient;
+
+#[contractclient(name = "UserRegistryContractClient")]
+pub trait UserRegistryContractInterface {
+    fn is_registered(env: Env, user: Address) -> bool;
+}
 
 #[contracttype]
 pub enum DataKey {
