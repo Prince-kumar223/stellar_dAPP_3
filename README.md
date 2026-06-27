@@ -1,155 +1,239 @@
 # Decentralized Feedback System
+GitHub username →Prince-kumar223
+Github repo:- https://github.com/Prince-kumar223/stellar_dAPP_3
+ci.yml → [![Mini dApp CI](https://github.com/Prince-kumar223/stellar_dAPP_3/actions/workflows/ci.yml/badge.svg)](https://github.com/Prince-kumar223/stellar_dAPP_3/actions/workflows/ci.yml)
 
-A mini decentralized application built with a React/Vite frontend and a Stellar Soroban smart contract. Users can connect a Freighter wallet, submit anonymous feedback, and fetch feedback by ID through a clean Web3 interface.
+
+
+A Stellar Soroban mini dApp for collecting, reviewing, and resolving feedback from registered users. The project includes a React/Vite frontend, Freighter wallet integration, Soroban smart contracts, automated contract tests, frontend build checks, and Vercel deployment configuration.
 
 ## Live Links
 
-- Live demo: https://mini-d-app-red.vercel.app/
-- Demo video: https://youtu.be/aB2SG5ilkYg?si=oYdSYFs9Y0-9sESs
-- GitHub repository: https://github.com/Prince-kumar223/mini-dAPP
-- Test output evidence: [docs/test-output.md](docs/test-output.md)
+- Live deployed link:- 
+- Demo video:-
+- GitHub repository:-  https://github.com/Prince-kumar223/stellar_dAPP_3
+- Test output evidence:-
 
-## NOTE :- FOR DEMO AND DEMO VIDEO LINK , SCREENSHORT GO TO THE LAST PLEASE.
+## Deployed contract ID
+
+FEEDBACK_CONTRACT_ID:- CDZHE5WGQXSJIV7VKNNTMOU5MEJ26PRPNUUDQZC2GTMZ7CTC3AZKV2WZ
+USER_REGISTRY_CONTRACT_ID:- CBT77CDDODCT5NWEC2JPIQGIFE4VOS5KIDJIFOFAYI6HF2R4S32W5HUV
+TRANSACTION_HASH:-733b190b3ccd0c86ca3a75e2faaec57143922a0c10221522dffec0553749ad6c
+
+## SCREENSHOT:-
+Mobile responsive UI:-![alt text](<WhatsApp Image 2026-06-25 at 4.02.29 PM.jpeg>)
+![alt text](<WhatsApp Image 2026-06-25 at 4.02.53 PM.jpeg>)
+
+CI/CD pipeline running:- 
+
+Test output with 3+ passing tests:- ![alt text](<Screenshot 2026-06-24 091119.png>)
+
+
 
 ## Features
 
-- Connect Freighter wallet and display connected account details.
-- Submit feedback from the frontend with loading, success, and validation states.
-- Fetch feedback by numeric ID with local caching for repeated lookups.
-- Soroban smart contract stores feedback entries by auto-incremented ID.
-- Rust test suite covers creation, retrieval, invalid IDs, and multiple feedback entries.
+- Connect and reconnect a Freighter wallet.
+- Register users through the admin-controlled user registry contract.
+- Submit feedback from registered users.
+- View feedback records with status, author, and timestamps.
+- Admin workflow for reviewing and resolving feedback.
+- Configurable Stellar testnet/mainnet network settings through Vite environment variables.
+- Rust contract tests for Soroban logic.
+- Frontend tests, linting, and production build scripts.
+- GitHub Actions CI for contract tests and frontend builds.
+- Vercel deployment from the repository root.
 
 ## Tech Stack
 
 - Frontend: React, Vite, Tailwind CSS, lucide-react
 - Wallet: Freighter Wallet API
-- Blockchain: Stellar Soroban smart contract in Rust
-- Tests: Rust `cargo test`
+- Blockchain: Stellar Soroban
+- Smart contracts: Rust, soroban-sdk
+- Tests: Cargo test, Vitest, Testing Library
+- CI/CD: GitHub Actions and Vercel
 
 ## Project Structure
 
 ```text
-mini dAPP/
+stellar_dAPP_3/
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml
 |-- contract/
-|   |-- src/
-|   |   |-- lib.rs
-|   |   `-- test.rs
-|   |-- test_snapshots/
+|   |-- feedback-contract/
+|   |   |-- src/
+|   |   |   |-- lib.rs
+|   |   |   `-- test.rs
+|   |   `-- Cargo.toml
+|   |-- user-registry-contract/
+|   |   |-- src/
+|   |   |   |-- lib.rs
+|   |   |   `-- test.rs
+|   |   `-- Cargo.toml
 |   |-- Cargo.toml
 |   `-- Cargo.lock
 |-- frontend/
-|   |-- public/
 |   |-- src/
 |   |   |-- components/
+|   |   |-- config/
+|   |   |-- hooks/
+|   |   |-- pages/
+|   |   |-- services/
 |   |   |-- App.jsx
-|   |   |-- index.css
 |   |   `-- main.jsx
 |   |-- package.json
-|   |-- vite.config.js
-|   `-- tailwind.config.js
+|   |-- package-lock.json
+|   `-- vite.config.js
 |-- docs/
 |   `-- test-output.md
+|-- scripts/
+|   |-- deploy-contract.ps1
+|   `-- deploy-contract.sh
 |-- SUBMISSION_CHECKLIST.md
+|-- vercel.json
 `-- README.md
 ```
 
 ## Prerequisites
 
-- Node.js and npm
-- Rust toolchain
-- Soroban CLI: `cargo install --locked soroban-cli`
+- Node.js 20+
+- npm
+- Rust stable toolchain
+- Soroban/Stellar CLI for contract build and deployment
 - Freighter browser wallet
+- Stellar testnet account funded with testnet XLM
+
+## Environment Variables
+
+Create `frontend/.env` for local development and configure the same values in Vercel for deployment.
+
+
+Optional tuning variables:
+
+```env
+VITE_STELLAR_BASE_FEE=100
+VITE_STELLAR_TX_TIMEOUT=30
+VITE_REFRESH_INTERVAL_MS=12000
+VITE_TX_POLL_INTERVAL_MS=1200
+VITE_MAX_FEEDBACK_PROBE_ID=50
+```
 
 ## Run Locally
 
-Install and start the frontend:
+Install frontend dependencies:
 
 ```bash
 cd frontend
-npm install
+npm ci
+```
+
+Start the frontend:
+
+```bash
 npm run dev
 ```
 
-Run the production build:
+Build the frontend:
 
 ```bash
-cd frontend
 npm run build
 ```
 
-Run lint checks:
+Run frontend tests:
 
 ```bash
-cd frontend
+npm run test
+```
+
+Run frontend lint checks:
+
+```bash
 npm run lint
 ```
 
 Run smart contract tests:
 
 ```bash
-cd contract
-cargo test
+cd ../contract
+cargo test --workspace
 ```
 
-## Smart Contract
+## Smart Contracts
 
-The contract exposes two methods:
+The contract workspace contains two Soroban contracts:
 
-- `create_feedback(text: String) -> u32`: stores feedback and returns a unique ID.
-- `get_feedback(id: u32) -> String`: returns the stored feedback or `Feedback not found`.
+- `feedback-contract`: stores feedback, tracks status, and supports admin review and resolution.
+- `user-registry-contract`: stores registered users and controls who can submit feedback.
 
-To build and deploy with Soroban:
+Main feedback flow:
 
-```bash
-cd contract
-soroban contract build
-soroban contract deploy --wasm target/wasm32-unknown-unknown/release/feedback_contract.wasm --source <your-identity> --network testnet
-```
-
-Save the returned contract ID and wire it into the frontend when replacing the current mocked transaction calls with live contract invocation.
+1. Admin initializes the registry and feedback contracts.
+2. Admin registers a user.
+3. Registered user submits feedback.
+4. Admin reviews pending feedback.
+5. Admin resolves reviewed feedback.
 
 ## Deployment
 
-Recommended Vercel settings:
+This repository is configured for Vercel with [vercel.json](vercel.json):
 
-- Root Directory: `frontend`
-- Framework Preset: Vite
-- Build Command: `npm run build`
-- Output Directory: `dist`
+```json
+{
+  "framework": "vite",
+  "installCommand": "npm ci --prefix frontend",
+  "buildCommand": "npm run build --prefix frontend",
+  "outputDirectory": "frontend/dist"
+}
+```
 
-After deployment, replace the TODO live demo link at the top of this README.
+Recommended Vercel setup:
+
+- Connect the GitHub repository to Vercel.
+- Keep the project root as the repository root.
+- Add all required `VITE_` environment variables in Vercel.
+- Push to `main` or `master` to trigger production deployment.
+
+## CI/CD
+
+GitHub Actions workflow: [.github/workflows/ci.yml](.github/workflows/ci.yml)
+
+The CI pipeline runs on pushes and pull requests targeting `main` or `master`.
+
+Jobs:
+
+- `test-contracts`: installs Rust, restores Cargo cache, and runs `cargo test --workspace` in `contract`.
+- `build-frontend`: installs Node.js 20, runs `npm ci`, and builds the Vite frontend in `frontend`.
+
+Current delivery flow:
+
+```text
+push to GitHub
+-> GitHub Actions validates contracts and frontend build
+-> Vercel builds frontend/dist
+-> Vercel deploys the live app
+```
 
 ## Test Status
 
-Latest local verification:
+
 
 ```text
 cargo test: 3 passed, 0 failed
-npm run lint: passed
-npm run build: passed
 ```
 
-For the submission screenshot requirement, take a screenshot of the terminal after running `cargo test` and add it to the README or upload it with the submission assets.
+## Demo
 
-## Demo Video Script
+- Demo video: https://youtu.be/aB2SG5ilkYg?si=oYdSYFs9Y0-9sESs
+- Deployed app: https://mini-d-app-red.vercel.app/
 
-1. Show the deployed app and title.
-2. Connect Freighter wallet and show the connected state.
-3. Enter feedback and click Create Feedback.
-4. Show the success state and generated feedback ID.
-5. Fetch that feedback ID and show the displayed feedback.
-6. Fetch the same ID again to mention the cached lookup behavior.
+Demo flow:
+
+1. Open the deployed app.
+2. Connect Freighter.
+3. Register a user as admin.
+4. Submit feedback from a registered wallet.
+5. Review and resolve feedback from the admin view.
 
 ## Submission Checklist
 
-See [SUBMISSION_CHECKLIST.md](SUBMISSION_CHECKLIST.md) for the final pre-submit checklist.
-
-## SUBMISSION REQUIREMENTS:-
-
-## DEMO VIDEO LINK:- https://youtu.be/aB2SG5ilkYg?si=oYdSYFs9Y0-9sESs
-
- ## <video controls src="Stellar_lvl_3_demo_video.mp4" title="Title"></video>
-
-## DEPLOYED LINK :- https://mini-d-app-red.vercel.app/
-## Screenshot: test output showing 3+ tests passing:-
-![alt text](<Screenshot 2026-04-26 230602.png>)
+See [SUBMISSION_CHECKLIST.md](SUBMISSION_CHECKLIST.md) for the final project checklist.
