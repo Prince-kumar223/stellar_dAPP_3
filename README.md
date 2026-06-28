@@ -9,10 +9,10 @@ A Stellar Soroban mini dApp for collecting, reviewing, and resolving feedback fr
 
 ## Live Links
 
-- Live deployed link:- 
-- Demo video:-
+- Live deployed link:-  https://stellar-d-app-3.vercel.app/
+- Demo video Link :- https://youtu.be/wEEcnQmigcs
 - GitHub repository:-  https://github.com/Prince-kumar223/stellar_dAPP_3
-- Test output evidence:-
+
 
 ## Deployed contract ID
 
@@ -24,7 +24,7 @@ TRANSACTION_HASH:-733b190b3ccd0c86ca3a75e2faaec57143922a0c10221522dffec0553749ad
 Mobile responsive UI:-![alt text](<WhatsApp Image 2026-06-25 at 4.02.29 PM.jpeg>)
 ![alt text](<WhatsApp Image 2026-06-25 at 4.02.53 PM.jpeg>)
 
-CI/CD pipeline running:- 
+CI/CD pipeline running:- ![alt text](image.png)
 
 Test output with 3+ passing tests:- ![alt text](<Screenshot 2026-06-24 091119.png>)
 
@@ -214,18 +214,7 @@ push to GitHub
 ```
 
 ## Test Status
-
-
-
-```text
 cargo test: 3 passed, 0 failed
-```
-
-## Demo
-
-- Demo video: https://youtu.be/aB2SG5ilkYg?si=oYdSYFs9Y0-9sESs
-- Deployed app: https://mini-d-app-red.vercel.app/
-
 Demo flow:
 
 1. Open the deployed app.
